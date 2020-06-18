@@ -1,20 +1,24 @@
-from src import Constants
+import Constants
 from PIL import Image
 
 import os
 import numpy as np
 import pickle
 
-from src.PyImgDataset import PyImgDataset, PyImgSession
+from PyImgDataset import PyImgDataset
+from PyImgSession import PyImgSession
 
 
 class DataManager:
     def __init__(self, dataset_name, update_data = False):
         self.dataset_name = dataset_name
         self.update_data = update_data
-        self.images = []                    #????
         self.dataset = None                 #l'obiettivo è mettere il dataset fatto ad oggetti qui!
         self.load_images_data(self.update_data)
+        # print('----')
+        # print(len(self.dataset.getData()['ITALIC'][0].getImages()))
+        # print(False in ((self.dataset.getData()['ITALIC'][0].getImages()[0])==(self.dataset.getData()['ITALIC'][1].getImages()[0])))
+        # print((self.dataset.getData()['ITALIC'][0].user_id)==(self.dataset.getData()['ITALIC'][1].user_id))
 
 
     def load_images_data(self, update_data = False):
@@ -23,19 +27,12 @@ class DataManager:
         else:
             self.generate_data()
             self.save_pickle_data()
-        # self.dataset.getData()['BLOCK LETTERS'][0].getImages()[0][0] è IL np.array che rappresenta un'immagine di BLOCK_LETTERS
-        # della prima sessione del primo utente
-        # print(self.dataset.getData()['BLOCK LETTERS'][0].getImages()[0][0],
-        #       type(self.dataset.getData()['BLOCK LETTERS'][0].getImages()[0][0]))
-        #
-        # print(self.dataset.getData()['BLOCK LETTERS'][0].getImages()[0][0].shape)
 
 
     def read_pickle_data(self):
         dataset_pickle_path = Constants.PICKLE_DATA_DIRECTORY_PATH+self.dataset_name
         pickle_in = open(dataset_pickle_path, "rb")
         self.dataset = pickle.load(pickle_in)
-        # print(self.dataset.getData())
         pickle_in.close()
 
 
@@ -57,14 +54,11 @@ class DataManager:
             user_folder_path = dataset_path+user_folder+"/"
             for session_number in os.listdir(user_folder_path):
                 for writing_style in os.listdir(user_folder_path+session_number):
-                    currentSession = PyImgSession(user_folder, session_number) #I DATI DELLA SESSIONE
+                    currentSession = PyImgSession(user_folder, session_number, writing_style) #The data of the single recording session, of a given user in a give writing_style
                     for img in os.listdir(user_folder_path+session_number+"/"+writing_style):
                         img_png= np.array(Image.open(user_folder_path+session_number+"/"+writing_style+"/"+img))
-                        img_text_components = img.split(".")
-                        img_text_components.remove('png')
-                        # img_text_components IS SOMETHING LIKE: ['s0', 'u2', 'ITALIC', '28'] so [ session_code, class_code, writing_style, token_number_of_the_session]
-                        img_text_components.insert(0,"s"+session_number)
-                        currentSession.add_image([np.array(img_png), img_text_components])
+                        # print(img)
+                        currentSession.add_image(np.array(img_png))
                     self.dataset.add_session(writing_style, currentSession)
 
 if __name__=='__main__':
